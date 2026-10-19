@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>轻图 · 图片压缩</title>
+<meta name="description" content="免费图片压缩、尺寸调整、格式转换，全部在本地完成，不上传服务器。">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#f5f7fa">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f7fa;--card:#fff;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--acc:#2563eb;--acc-d:#1d4ed8;--ok:#059669}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+header{text-align:center;padding:26px 0 18px}
+header h1{font-size:1.7rem;letter-spacing:.15em}
+header h1 span{color:var(--acc)}
+header p{color:var(--mut);font-size:.82rem;margin-top:8px;letter-spacing:.05em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+#drop{border:2px dashed #c7d2fe;border-radius:14px;background:#eef2ff;text-align:center;padding:44px 16px;cursor:pointer;transition:.2s}
+#drop.over{border-color:var(--acc);background:#e0e9ff;transform:scale(1.01)}
+#drop .big{font-size:2.2rem}
+#drop p{margin-top:10px;color:#4338ca;font-size:.9rem}
+#drop small{color:var(--mut);font-size:.75rem}
+input[type=file]{display:none}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px}
+.ctl label{display:block;font-size:.78rem;color:var(--mut);margin-bottom:6px}
+.ctl output{float:right;color:var(--acc);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--acc)}
+select,input[type=number]{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;background:#fff;color:var(--ink)}
+.row2{display:flex;gap:10px}
+.btn{display:inline-block;border:none;border-radius:10px;padding:12px 22px;font-size:.95rem;cursor:pointer;letter-spacing:.05em}
+.btn-p{background:var(--acc);color:#fff}
+.btn-p:active{background:var(--acc-d)}
+.btn-g{background:#eef2ff;color:#3730a3}
+.btn-d{background:var(--ok);color:#fff;padding:8px 16px;font-size:.82rem;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:default}
+.item{display:flex;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:none}
+.thumb{width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none;background:#f3f4f6;cursor:zoom-in}
+.meta{flex:1;min-width:0}
+.meta .nm{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .sz{font-size:.75rem;color:var(--mut);margin-top:5px}
+.meta .sz b{color:var(--ok)}
+.bar{height:6px;background:#eef2ff;border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#60a5fa,#2563eb);border-radius:3px}
+.stat{display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;font-size:.85rem;margin-bottom:14px}
+.stat b{color:var(--ok);font-size:1.05rem}
+.empty{text-align:center;color:var(--mut);padding:26px 0;font-size:.85rem}
+dialog{border:none;border-radius:14px;padding:0;max-width:92vw}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog img{max-width:92vw;max-height:86vh;display:block;border-radius:14px}
+.note{font-size:.75rem;color:var(--mut);text-align:center;margin-top:6px}
+@media(max-width:560px){.controls{grid-template-columns:1fr}.item{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>轻<span>图</span></h1><p>图片压缩 · 尺寸调整 · 格式转换 —— 全部本地完成，不上传</p></header>
+
+<div class="card">
+<div id="drop">
+<div class="big">🖼️</div>
+<p>点击选择图片，或拖拽到这里</p>
+<small>支持 JPG / PNG / WebP / GIF（首帧），可批量</small>
+<input type="file" id="file" accept="image/*" multiple>
+</div>
+</div>
+
+<div class="card">
+<div class="controls">
+<div class="ctl"><label>压缩质量 <output id="o-q">80%</output></label><input type="range" id="q" min="10" max="100" value="80"></div>
+<div class="ctl"><label>输出格式</label><select id="fmt"><option value="keep">保持原格式</option><option value="jpeg">JPEG（体积最小）</option><option value="webp">WebP（清晰又小）</option><option value="png">PNG（无损）</option></select></div>
+<div class="ctl"><label>最长边限制（px，0=不缩放）</label><input type="number" id="mx" value="1920" min="0" max="8000"></div>
+<div class="ctl"><label>&nbsp;</label><div class="row2"><button class="btn btn-p" id="go" style="flex:1" disabled>开始压缩</button><button class="btn btn-g" id="dlall" disabled>全部下载</button></div></div>
+</div>
+</div>
+
+<div class="card" id="list-card" style="display:none">
+<div class="stat"><span>共 <b id="st-n">0</b> 张</span><span>原 <b id="st-o">0</b></span><span>压缩后 <b id="st-c">0</b></span><span>节省 <b id="st-s">0%</b></span></div>
+<div id="list"></div>
+</div>
+
+<p class="note">所有处理均在你的设备上完成，图片不会发送到任何服务器。</p>
+</div>
+
+<dialog id="pv"><img id="pvimg" alt="预览"></dialog>
+
+<script>
+const $=id=>document.getElementById(id);
+const files=[]; // {file,url,w,h,done,blob,csave}
+const drop=$('drop'),fi=$('file');
+drop.onclick=()=>fi.click();
+['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>addFiles(ev.dataTransfer.files));
+fi.onchange=()=>{addFiles(fi.files);fi.value=''};
+$('q').oninput=e=>$('o-q').textContent=e.target.value+'%';
+$('pv').onclick=()=>$('pv').close();
+
+function fmtSize(b){if(b<1024)return b+'B';if(b<1048576)return (b/1024).toFixed(1)+'KB';return (b/1048576).toFixed(2)+'MB'}
+function addFiles(fs){
+  [...fs].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const url=URL.createObjectURL(f),img=new Image();
+    img.onload=()=>{files.push({file:f,url,w:img.width,h:img.height,done:false});render();};
+    img.src=url;
+  });
+}
+function render(){
+  const lc=$('list-card');if(!files.length){lc.style.display='none';return}
+  lc.style.display='';
+  $('go').disabled=false;
+  $('list').innerHTML=files.map((f,i)=>`
+  <div class="item">
+    <img class="thumb" src="${f.done&&f.curl?f.curl:f.url}" data-i="${i}">
+    <div class="meta">
+      <div class="nm">${f.file.name}</div>
+      <div class="sz">${f.w}×${f.h} · 原 ${fmtSize(f.file.size)}${f.done?` → <b>${fmtSize(f.csize)}，省 ${f.save}%</b>`:''}</div>
+      ${f.done?`<div class="bar"><i style="width:${100-f.save}%"></i></div>`:`<div class="sz" style="color:#f59e0b">等待压缩…</div>`}
+    </div>
+    ${f.done?`<button class="btn btn-d" data-dl="${i}">下载</button>`:''}
+  </div>`).join('');
+  document.querySelectorAll('.thumb').forEach(t=>t.onclick=()=>{const f=files[+t.dataset.i];$('pvimg').src=f.done&&f.curl?f.curl:f.url;$('pv').showModal()});
+  document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>dl(+b.dataset.dl));
+  updStat();
+}
+function updStat(){
+  const n=files.length,o=files.reduce((s,f)=>s+f.file.size,0),c=files.filter(f=>f.done).reduce((s,f)=>s+f.csize,0);
+  $('st-n').textContent=n;$('st-o').textContent=fmtSize(o);
+  $('st-c').textContent=files.some(f=>f.done)?fmtSize(c):'—';
+  $('st-s').textContent=(o&&c)?Math.round((1-c/o)*100)+'%':'—';
+  $('dlall').disabled=!files.some(f=>f.done);
+}
+function dl(i){
+  const f=files[i],a=document.createElement('a');
+  a.href=f.curl;a.download=f.oname;document.body.appendChild(a);a.click();a.remove();
+}
+$('dlall').onclick=()=>{files.forEach((f,i)=>{if(f.done)setTimeout(()=>dl(i),i*400)})};
+
+$('go').onclick=async()=>{
+  const q=$('q').value/100,fmt=$('fmt').value,mx=+$('mx').value||0;
+  $('go').disabled=true;$('go').textContent='压缩中…';
+  for(const f of files){
+    try{await compressOne(f,q,fmt,mx)}catch(e){console.warn(e)}
+    render();
+  }
+  $('go').disabled=false;$('go').textContent='重新压缩';
+};
+function compressOne(f,q,fmt,mx){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let{w,h}=f;
+      if(mx&&Math.max(w,h)>mx){const r=mx/Math.max(w,h);w=Math.round(w*r);h=Math.round(h*r)}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      let mime=f.file.type,out=fmt;
+      if(fmt==='jpeg')mime='image/jpeg';
+      else if(fmt==='webp')mime='image/webp';
+      else if(fmt==='png')mime='image/png';
+      else if(fmt==='keep'){if(mime==='image/png')out='png';else if(mime==='image/webp')out='webp';else{mime='image/jpeg';out='jpeg'}}
+      const qq=(mime==='image/png')?undefined:q;
+      cv.toBlob(b=>{
+        if(!b)return rej('fail');
+        f.blob=b;f.csize=b.size;f.curl=URL.createObjectURL(b);
+        f.save=Math.max(0,Math.round((1-b.size/f.file.size)*100));
+        const base=f.file.name.replace(/\.[^.]+$/,'');
+        f.oname=base+(out==='jpeg'?'.jpg':out==='png'?'.png':'.webp');
+        f.done=true;res();
+      },mime,qq);
+    };
+    img.onerror=rej;img.src=f.url;
+  });
+}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
